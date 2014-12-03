@@ -1,10 +1,11 @@
 var warningsPlugin = PHPCI.UiPlugin.extend({
     id: 'build-warnings-chart',
-    css: 'col-lg-6 col-md-6 col-sm-12 col-xs-12',
+    css: 'col-lg-12 col-md-12 col-sm-12 col-xs-12',
     title: 'Quality Trend',
     keys: {
         'phpunit-success': 'PHPUnit Passed',
         'phpunit-errors': 'PHPUnit Failed',
+
         'phpmd-warnings': 'PHPMD Warnings',
         'phpcs-warnings': 'PHPCS Warnings',
         'phpcs-errors': 'PHPCS Errors',
@@ -93,8 +94,13 @@ var warningsPlugin = PHPCI.UiPlugin.extend({
         var data = google.visualization.arrayToDataTable(data);
         var options = {
             hAxis: {title: 'Builds'},
-            vAxis: {title: 'Warnings / Errors'},
+            vAxis: {title: 'Count'},
             backgroundColor: { fill: 'transparent' },
+            axisTitlesPosition:"out",
+
+            curveType: 'function',
+            legend: { position: 'right', textStyle: {fontSize: 9} },
+
             height: 275,
             pointSize: 3
         };
