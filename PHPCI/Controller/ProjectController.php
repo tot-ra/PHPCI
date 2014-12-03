@@ -17,7 +17,6 @@ use b8\Exception\HttpException\NotFoundException;
 use b8\Store;
 use PHPCI\BuildFactory;
 use PHPCI\Helper\Github;
-use PHPCI\Helper\Session;
 use PHPCI\Helper\SshKey;
 use PHPCI\Model\Build;
 use PHPCI\Model\Project;
