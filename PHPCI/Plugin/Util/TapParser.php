@@ -2,6 +2,8 @@
 
 namespace PHPCI\Plugin\Util;
 
+use PHPCI\Helper\Lang;
+
 class TapParser
 {
     const TEST_COUNTS_PATTERN = '/([0-9]+)\.\.([0-9]+)/';
@@ -43,10 +45,10 @@ class TapParser
         $versionLine = array_shift($lines);
 
         if ($versionLine != 'TAP version 13') {
-            throw new \Exception('TapParser only supports TAP version 13');
+            throw new \Exception(Lang::get('tap_version'));
         }
 
-        if (preg_match(self::TEST_COVERAGE_PATTERN, $lines[count($lines) - 1])) {
+        if (isset($lines[count($lines) - 1]) && preg_match(self::TEST_COVERAGE_PATTERN, $lines[count($lines) - 1])) {
             array_pop($lines);
             if ($lines[count($lines) - 1] == "") {
                 array_pop($lines);
@@ -60,7 +62,8 @@ class TapParser
             $totalTests = (int) $matches[2];
         }
 
-        if (preg_match(self::TEST_COUNTS_PATTERN, $lines[count($lines) - 1], $matches)) {
+        if (isset($lines[count($lines) - 1]) &&
+            preg_match(self::TEST_COUNTS_PATTERN, $lines[count($lines) - 1], $matches)) {
             array_pop($lines);
             $totalTests = (int) $matches[2];
         }

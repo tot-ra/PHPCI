@@ -10,6 +10,7 @@
 namespace PHPCI\Controller;
 
 use b8;
+use PHPCI\Helper\Lang;
 use PHPCI\Model\Build;
 use PHPCI\Plugin\Util\ComposerPluginInformation;
 use PHPCI\Plugin\Util\FilesPluginInformation;
@@ -24,6 +25,10 @@ use PHPCI\Plugin\Util\PluginInformationCollection;
 class PluginController extends \PHPCI\Controller
 {
     protected $required = array(
+        'php',
+        'ext-mcrypt',
+        'ext-pdo',
+        'ext-pdo_mysql',
         'block8/b8framework',
         'ircmaxell/password-compat',
         'swiftmailer/swiftmailer',
@@ -31,7 +36,8 @@ class PluginController extends \PHPCI\Controller
         'symfony/console',
         'psr/log',
         'monolog/monolog',
-        'pimple/pimple'
+        'pimple/pimple',
+        'robmorgan/phinx',
     );
 
     protected $canInstall;
@@ -39,9 +45,7 @@ class PluginController extends \PHPCI\Controller
 
     public function index()
     {
-        if (!\PHPCI\Helper\Session['user']->getIsAdmin()) {
-            throw new \Exception('You do not have permission to do that.');
-        }
+        $this->requireAdmin();
 
         $this->view->canWrite = is_writable(APPLICATION_PATH . 'composer.json');
         $this->view->required = $this->required;
@@ -60,16 +64,14 @@ class PluginController extends \PHPCI\Controller
 
         $this->view->plugins = $pluginInfo->getInstalledPlugins();
 
-        $this->config->set('page_title', 'Plugins');
+        $this->layout->title = Lang::get('plugins');
 
         return $this->view->render();
     }
 
     public function remove()
     {
-        if (!\PHPCI\Helper\Session['user']->getIsAdmin()) {
-            throw new \Exception('You do not have permission to do that.');
-        }
+        $this->requireAdmin();
 
         $package = $this->getParam('package', null);
         $json = $this->getComposerJson();
@@ -88,9 +90,7 @@ class PluginController extends \PHPCI\Controller
 
     public function install()
     {
-        if (!\PHPCI\Helper\Session::get('user')->getIsAdmin()) {
-            throw new \Exception('You do not have permission to do that.');
-        }
+        $this->requireAdmin();
 
         $package = $this->getParam('package', null);
         $version = $this->getParam('version', '*');
@@ -109,9 +109,19 @@ class PluginController extends \PHPCI\Controller
         return json_decode($json, true);
     }
 
+    /**
+     * Convert array to json and save composer.json
+     * 
+     * @param $array
+     */
     protected function setComposerJson($array)
     {
-        $json = json_encode($array);
+        if (defined('JSON_PRETTY_PRINT')) {
+            $json = json_encode($array, JSON_PRETTY_PRINT);
+        } else {
+            $json = json_encode($array);
+        }
+
         file_put_contents(APPLICATION_PATH . 'composer.json', $json);
     }
 

@@ -10,8 +10,8 @@
 namespace PHPCI\Controller;
 
 use b8;
-use PHPCI\Helper\Session;
 use PHPCI\Helper\Email;
+use PHPCI\Helper\Lang;
 
 /**
 * Session Controller - Handles user login / logout.
@@ -41,8 +41,9 @@ class SessionController extends \PHPCI\Controller
 
         if ($this->request->getMethod() == 'POST') {
             $user = $this->userStore->getByEmail($this->getParam('email'));
+
             if ($user && password_verify($this->getParam('password', ''), $user->getHash())) {
-                Session::set('user_id',$user->getId());
+                $_SESSION['phpci_user_id']    = $user->getId();
                 header('Location: ' . $this->getLoginRedirect());
                 die;
             } else {
@@ -55,21 +56,21 @@ class SessionController extends \PHPCI\Controller
         $form->setAction(PHPCI_URL.'session/login');
 
         $email = new b8\Form\Element\Email('email');
-        $email->setLabel('Email Address');
+        $email->setLabel(Lang::get('email_address'));
         $email->setRequired(true);
         $email->setContainerClass('form-group');
         $email->setClass('form-control');
         $form->addField($email);
 
         $pwd = new b8\Form\Element\Password('password');
-        $pwd->setLabel('Password');
+        $pwd->setLabel(Lang::get('password'));
         $pwd->setRequired(true);
         $pwd->setContainerClass('form-group');
         $pwd->setClass('form-control');
         $form->addField($pwd);
 
         $pwd = new b8\Form\Element\Submit();
-        $pwd->setValue('Log in &raquo;');
+        $pwd->setValue(Lang::get('log_in'));
         $pwd->setClass('btn-success');
         $form->addField($pwd);
 
@@ -84,8 +85,9 @@ class SessionController extends \PHPCI\Controller
     */
     public function logout()
     {
-        Session::remove('user');
-        Session::remove('user_id');
+        unset($_SESSION['phpci_user']);
+        unset($_SESSION['phpci_user_id']);
+
         session_destroy();
         header('Location: ' . PHPCI_URL);
         die;
@@ -98,33 +100,18 @@ class SessionController extends \PHPCI\Controller
             $user = $this->userStore->getByEmail($email);
 
             if (empty($user)) {
-                $this->view->error = 'No user exists with that email address, please try again.';
+                $this->view->error = Lang::get('reset_no_user_exists');
                 return $this->view->render();
             }
 
             $key = md5(date('Y-m-d') . $user->getHash());
             $url = PHPCI_URL;
-            $name = $user->getName();
-            $userId = $user->getId();
 
-            $message = <<<MSG
-Hi {$name},
-
-You have received this email because you, or someone else, has requested a password reset for PHPCI.
-
-If this was you, please click the following link to reset your password: {$url}session/reset-password/{$userId}/{$key}
-
-Otherwise, please ignore this email and no action will be taken.
-
-Thank you,
-
-PHPCI
-MSG;
-
+            $message = Lang::get('reset_email_body', $user->getName(), $url, $user->getId(), $key);
 
             $email = new Email();
             $email->setEmailTo($user->getEmail(), $user->getName());
-            $email->setSubject('Password reset');
+            $email->setSubject(Lang::get('reset_email_title', $user->getName()));
             $email->setBody($message);
             $email->send();
 
@@ -140,7 +127,7 @@ MSG;
         $userKey = md5(date('Y-m-d') . $user->getHash());
 
         if (empty($user) || $key != $userKey) {
-            $this->view->error = 'Invalid password reset request.';
+            $this->view->error = Lang::get('reset_invalid');
             return $this->view->render();
         }
 
@@ -148,8 +135,8 @@ MSG;
             $hash = password_hash($this->getParam('password'), PASSWORD_DEFAULT);
             $user->setHash($hash);
 
-            Session::set('user', $this->userStore->save($user));
-            Session::set('user_id', $user->getId());
+            $_SESSION['phpci_user'] = $this->userStore->save($user);
+            $_SESSION['phpci_user_id'] = $user->getId();
 
             header('Location: ' . PHPCI_URL);
             die;
@@ -165,9 +152,9 @@ MSG;
     {
         $rtn = PHPCI_URL;
 
-        if (!empty(Session::get('login_redirect'))) {
-            $rtn .= Session::get('login_redirect');
-            Session::remove('login_redirect');
+        if (!empty($_SESSION['phpci_login_redirect'])) {
+            $rtn .= $_SESSION['phpci_login_redirect'];
+            $_SESSION['phpci_login_redirect'] = null;
         }
 
         return $rtn;

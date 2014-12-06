@@ -14,7 +14,7 @@ use b8\Exception\HttpException;
 use b8\Http\Response;
 use b8\Http\Response\RedirectResponse;
 use b8\View;
-use PHPCI\Helper\Session;
+use PHPCI\Model\Build;
 
 /**
 * PHPCI Front Controller
@@ -30,15 +30,15 @@ class Application extends b8\Application
 
         // Inlined as a closure to fix "using $this when not in object context" on 5.3
         $validateSession = function () {
-            if (!empty(Session::get('user_id'))) {
-                $user = b8\Store\Factory::getStore('User')->getByPrimaryKey(Session::get('user_id'));
+            if (!empty($_SESSION['phpci_user_id'])) {
+                $user = b8\Store\Factory::getStore('User')->getByPrimaryKey($_SESSION['phpci_user_id']);
 
                 if ($user) {
-                    Session::set('user',$user);
+                    $_SESSION['phpci_user'] = $user;
                     return true;
                 }
 
-                Session::remove('user_id');
+                unset($_SESSION['phpci_user_id']);
             }
 
             return false;
@@ -53,7 +53,7 @@ class Application extends b8\Application
                     $response->setResponseCode(401);
                     $response->setContent('');
                 } else {
-                    Session::set('login_redirect', substr($request->getPath(), 1));
+                    $_SESSION['phpci_login_redirect'] = substr($request->getPath(), 1);
                     $response = new RedirectResponse($response);
                     $response->setHeader('Location', PHPCI_URL.'session/login');
                 }
@@ -92,18 +92,30 @@ class Application extends b8\Application
             $this->response->setContent($view->render());
         }
 
-        if (View::exists('layout') && $this->response->hasLayout()) {
-            $view           = new View('layout');
-            $pageTitle = $this->config->get('page_title', null);
+        if ($this->response->hasLayout()) {
+            $this->setLayoutVariables($this->controller->layout);
 
-            if (!is_null($pageTitle)) {
-                $view->title = $pageTitle;
-            }
-
-            $view->content  = $this->response->getContent();
-            $this->response->setContent($view->render());
+            $this->controller->layout->content  = $this->response->getContent();
+            $this->response->setContent($this->controller->layout->render());
         }
 
         return $this->response;
+    }
+
+    protected function loadController($class)
+    {
+        $controller = parent::loadController($class);
+        $controller->layout = new View('layout');
+        $controller->layout->title = 'PHPCI';
+        $controller->layout->breadcrumb = array();
+
+        return $controller;
+    }
+
+    protected function setLayoutVariables(View &$layout)
+    {
+        /** @var \PHPCI\Store\ProjectStore $projectStore */
+        $projectStore = b8\Store\Factory::getStore('Project');
+        $layout->projects = $projectStore->getAll();
     }
 }

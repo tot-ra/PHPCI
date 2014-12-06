@@ -19,7 +19,7 @@ class User
 {
     public function __call($method, $params = array())
     {
-        $user = \PHPCI\Helper\Session::get('user');
+        $user = $_SESSION['phpci_user'];
 
         if (!is_object($user)) {
             return null;

@@ -1,6 +1,6 @@
-var timePlugin = PHPCI.UiPlugin.extend({
+var timePlugin = ActiveBuild.UiPlugin.extend({
     id: 'build-time',
-    css: 'col-lg-6 col-md-6 col-sm-12 col-xs-12',
+    css: 'col-lg-12 col-md-12 col-sm-12 col-xs-12',
     title: null,
     box: true,
 
@@ -9,18 +9,35 @@ var timePlugin = PHPCI.UiPlugin.extend({
     },
 
     render: function() {
+        var created = '';
+        var started = '';
+        var finished = '';
+
+        if (ActiveBuild.buildData.created) {
+            created = dateFormat(ActiveBuild.buildData.created);
+        }
+
+        if (ActiveBuild.buildData.started) {
+            started = dateFormat(ActiveBuild.buildData.started);
+        }
+
+        if (ActiveBuild.buildData.finished) {
+            finished = dateFormat(ActiveBuild.buildData.finished);
+        }
+
         return '<table class="table table-striped table-bordered">' +
+            '<thead>' +
+            '<tr>' +
+                '<th style="width: 33.3%">'+Lang.get('build_created')+'</th>' +
+                '<th style="width: 33.3%">'+Lang.get('build_started')+'</th>' +
+                '<th style="width: 33.3%">'+Lang.get('build_finished')+'</th>' +
+            '</tr>' +
+            '</thead>' +
         '<tbody>' +
             '<tr>' +
-            '<th>Build Created</th>' +'<td id="created">' + PHPCI.buildData.created + '</td>' +
-            '</tr>' +
-            
-            '<tr>' +
-            '<th>Build Started</th>' + '<td id="started">' + PHPCI.buildData.started + '</td>' +
-            '</tr>' +
-
-            '<tr>' +
-            '<th>Build Finished</th>' + '<td id="finished">' + PHPCI.buildData.finished + '</td>' +
+            '<td id="created">' + created + '</td>' +
+            '<td id="started">' + started + '</td>' +
+            '<td id="finished">' + finished + '</td>' +
             '</tr>' +
         '</tbody>' +
         '</table>';
@@ -29,10 +46,26 @@ var timePlugin = PHPCI.UiPlugin.extend({
     onUpdate: function(e) {
         var build = e.queryData;
 
-        $('#created').text(build.created);
-        $('#started').text(build.started);
-        $('#finished').text(build.finished);
+        var created = '';
+        var started = '';
+        var finished = '';
+
+        if (build.created) {
+            created = dateFormat(build.created);
+        }
+
+        if (build.started) {
+            started = dateFormat(build.started);
+        }
+
+        if (build.finished) {
+            finished = dateFormat(build.finished);
+        }
+
+        $('#created').text(created);
+        $('#started').text(started);
+        $('#finished').text(finished);
     }
 });
 
-PHPCI.registerPlugin(new timePlugin());
+ActiveBuild.registerPlugin(new timePlugin());

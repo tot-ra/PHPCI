@@ -129,7 +129,7 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
 
         // Run any dirs next. Again this can be either a single value or an array.
         if ($this->directory !== null) {
-            $success &= $this->runDir();
+            $success &= $this->runDir($this->directory);
         }
 
         $tapString = $this->phpci->getLastOutput();
@@ -165,7 +165,7 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
             $phpunit = $this->phpci->findBinary('phpunit');
 
             if (!$phpunit) {
-                $this->phpci->logFailure('Could not find phpunit.');
+                $this->phpci->logFailure(PHPCI\Helper\Lang::get('could_not_find', 'phpunit'));
                 return false;
             }
 
@@ -181,10 +181,10 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
         }
     }
 
-    protected function runDir()
+    protected function runDir($directory)
     {
-        if (is_array($this->directory)) {
-            return $this->recurseArg($this->directory, array($this, "runDir"));
+        if (is_array($directory)) {
+            return $this->recurseArg($directory, array($this, "runDir"));
         } else {
             $curdir = getcwd();
             chdir($this->phpci->buildPath);
@@ -192,12 +192,12 @@ class PhpUnit implements PHPCI\Plugin, PHPCI\ZeroConfigPlugin
             $phpunit = $this->phpci->findBinary('phpunit');
 
             if (!$phpunit) {
-                $this->phpci->logFailure('Could not find phpunit.');
+                $this->phpci->logFailure(PHPCI\Helper\Lang::get('could_not_find', 'phpunit'));
                 return false;
             }
 
             $cmd = $phpunit . ' --tap %s "%s"';
-            $success = $this->phpci->executeCommand($cmd, $this->args, $this->phpci->buildPath . $this->directory);
+            $success = $this->phpci->executeCommand($cmd, $this->args, $this->phpci->buildPath . $directory);
             chdir($curdir);
             return $success;
         }
